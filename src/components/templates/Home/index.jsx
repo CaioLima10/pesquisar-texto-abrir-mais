@@ -1,73 +1,59 @@
 
-import  React from 'react'
+import  React, { useCallback, useEffect, useState } from 'react'
 import './styles.css';
 
 import Posts from '../../PostsCard/Posts';
-import  LoadPosts  from '../../../utils/index'
+import LoadPosts  from '../../../utils/index'
 import Button from '../../Button';
 import ValueInput from '../../ValueInput';
 
-export class Home extends React.Component {
-  state = {
-    posts: [],
-    allPosts:[],
-    page: 0,
-    postsPerPage: 6,
-    searchValue: ''
-
-
-  }
-  async componentDidMount(){
-  await this.loadPosts();
-  }
-
-  loadPosts = async () => {
-   const {page , postsPerPage} = this.state
-
-   const postsAndPhotos = await LoadPosts()
-    this.setState({
-      posts: postsAndPhotos.slice(page , postsPerPage),
-      allPosts: postsAndPhotos  
-    })
-   }
+export const Home = () => {
   
-   LoadMorePorts = () => {
-   const {
-    page , 
-    postsPerPage,
-    allPosts,
-    posts
-   } = this.state;
+    const [posts , setPosts] = useState([])
+    const [allPosts , setAllPosts] = useState([])
+    const [page , setPage] = useState(0)
+    const [postsPerPage ] = useState(6)
+    const [searchValue , setSearchValue] = useState('')
 
-   const nextPage = page + postsPerPage
-   const nextPosts = allPosts.slice(nextPage ,  nextPage + postsPerPage)
-  posts.push(...nextPosts)
-
-  this.setState({posts , page: nextPage })
-   }
-
-   hundleChange = (e) => {
-    const { value } = e.target
-    this.setState({ searchValue: value })
-   }
-
-
-  render() {
-    const {posts , page , postsPerPage , allPosts , searchValue} = this.state
     const noMorePosts = page + postsPerPage >= allPosts.length
-    
-    const filterPosts = !!searchValue ? posts.filter(post => {
+
+      const filterPosts = !!searchValue ? posts.filter(post => {
       return post.title.toLowerCase().includes(
         searchValue.toLowerCase()
       )
     }): posts
+
     
+    const HandleloadPosts = useCallback( async (page , postsPerPage) => {
+   const postsAndPhotos = await LoadPosts()
+    setPosts(postsAndPhotos.slice(page , postsPerPage))
+    setAllPosts( postsAndPhotos  )
+   }, [] )
+   useEffect(() => {
+     HandleloadPosts(0 , postsPerPage)
+   }, [ HandleloadPosts , postsPerPage])
+  
+   const LoadMorePorts = () => {
+   const nextPage = page + postsPerPage
+   const nextPosts = allPosts.slice(nextPage ,  nextPage + postsPerPage)
+   posts.push(...nextPosts)
+
+  setPosts(posts)
+  setPage(nextPage)
+   }
+
+  const hundleChange = (e) => {
+    const { value } = e.target
+    setSearchValue(value)
+   }
+    
+
     return (
       <section className='container'>  
 
         <div className="search-container">
            <h3>Seach Value:</h3>
-           <ValueInput searchValue={searchValue} hundleChange={this.hundleChange}/>
+           <ValueInput searchValue={searchValue} hundleChange={hundleChange}/>
            <br /> <br /> <br />
         </div>
         
@@ -83,7 +69,7 @@ export class Home extends React.Component {
           {!searchValue &&(
             <Button 
             text={"Confirmar"}
-            onClick={this.LoadMorePorts}
+            onClick={LoadMorePorts}
             disabled={noMorePosts}
             />
           )}
@@ -91,7 +77,5 @@ export class Home extends React.Component {
         </div>
       </section> 
     );
-  }
 }
-
 export default Home;
